@@ -655,6 +655,36 @@ def test_api_rooms_response_no_telephony(settings):
     assert response.data["id"] == str(room.id)
 
 
+def test_api_rooms_token_scope_case_insensitive(settings):
+    """Token's scope should be case-insensitive."""
+    settings.APPLICATION_JWT_SECRET_KEY = "devKey"
+    user = UserFactory()
+
+    # Generate token without delegated flag
+    now = datetime.now(timezone.utc)
+    payload = {
+        "iss": settings.APPLICATION_JWT_ISSUER,
+        "aud": settings.APPLICATION_JWT_AUDIENCE,
+        "iat": now,
+        "exp": now + timedelta(hours=1),
+        "client_id": "test-client",
+        "scope": "Rooms:List",
+        "user_id": str(user.id),
+        "delegated": True,
+    }
+    token = jwt.encode(
+        payload,
+        settings.APPLICATION_JWT_SECRET_KEY,
+        algorithm=settings.APPLICATION_JWT_ALG,
+    )
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    response = client.get("/external-api/v1.0/rooms/")
+
+    assert response.status_code == 200
+
+
 def test_api_rooms_token_without_delegated_flag(settings):
     """Token without delegated flag should be rejected."""
     settings.APPLICATION_JWT_SECRET_KEY = "devKey"
