@@ -33,12 +33,10 @@ class BaseScopePermission(permissions.BasePermission):
         Raises:
             PermissionDenied: If required scope is missing from token
         """
-        # Get the current action (e.g., 'list', 'create')
+        # Get the current action (e.g., 'list', 'create'), if None let DRF handle it
         action = getattr(view, "action", None)
         if not action:
-            raise exceptions.PermissionDenied(
-                "Insufficient permissions. Unknown action."
-            )
+            return True
 
         required_scope = self.scope_map.get(action)
         if not required_scope:
